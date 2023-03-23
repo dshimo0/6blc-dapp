@@ -45,9 +45,10 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 
   async function updateCashbackBalance() {
-    const cashbackBalance = await contractInstance.balanceOf(userAddress);
+    const cashbackBalance = await cashbackContract.balanceOf(userAddress);
     document.getElementById("cashbackBalance").innerText = ethers.utils.formatUnits(cashbackBalance, "wei");
-  }
+}
+
 
   async function connectWallet() {
     console.log("Conectando à carteira...");
@@ -58,7 +59,6 @@ document.addEventListener("DOMContentLoaded", () => {
         signer = provider.getSigner();
         userAddress = await signer.getAddress();
         cashbackContract = new ethers.Contract(contractAddress, contractABI, signer);
-
         document.getElementById("walletAddress").innerText = userAddress;
         updateCashbackBalance();
         return userAddress;

@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cashback Token UI</title>
+    <script src="https://cdn.jsdelivr.net/npm/web3@latest/dist/web3.min.js"></script>
+</head>
+<body>
+    <h1>Cashback Token</h1>
+    <button id="connectMetaMask">Conectar MetaMask</button>
+    <button id="register">Registrar</button>
+    <br>
+    <input type="text" id="transferAmount" placeholder="Quantidade CB$">
+    <input type="text" id="transferTo" placeholder="Endereço do destinatário">
+    <button id="transfer">Transferir CB$</button>
+    <br>
+    <input type="text" id="redeemAmount" placeholder="Quantidade CB$">
+    <button id="redeem">Resgatar CB$</button>
+    <br>
+    <button id="checkBalance">Verificar saldo</button>
+    <div id="balance">Saldo: 0 CB$</div>
+    <br>
+    <h3>Verificar Carteiras</h3>
+    <input type="text" id="walletAddress" placeholder="Endereço da carteira" />
+    <button id="checkWallet">Verificar Carteira</button>
+    <div id="walletInfo"></div>
+    <br>
+    <button id="registerWallet">Registrar Carteira</button>
+    <script>
+        const contractAddress = "0x87CaA4D3981A60Fb58C4BD83f75E23EF8547F11e";
+        const abi = [{"inputs":[],"stateMutability":"nonpayable","type":"constructor"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"owner","type":"address"},{"indexed":true,"internalType":"address","name":"spender","type":"address"},{"indexed":false,"internalType":"uint256","name":"value","type":"uint256"}],"name":"Approval","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"from","type":"address"},{"indexed":true,"internalType":"address","name":"to","type":"address"},{"indexed":false,"internalType":"uint256","name":"value","type":"uint256"}],"name":"Transfer","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"user","type":"address"}],"name":"UserRegistered","type":"event"},{"inputs":[],"name":"CB_TO_ETH","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"INITIAL_SUPPLY","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"address","name":"owner","type":"address"},{"internalType":"address","name":"spender","type":"address"}],"name":"allowance","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"address","name":"spender","type":"address"},{"internalType":"uint256","name":"amount","type":"uint256"}],"name":"approve","outputs":[{"internalType":"bool","name":"","type":"bool"}],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"address","name":"account","type":"address"}],"name":"balanceOf","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"decimals","outputs":[{"internalType":"uint8","name":"","type":"uint8"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"address","name":"spender","type":"address"},{"internalType":"uint256","name":"subtractedValue","type":"uint256"}],"name":"decreaseAllowance","outputs":[{"internalType":"bool","name":"","type":"bool"}],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"address","name":"spender","type":"address"},{"internalType":"uint256","name":"addedValue","type":"uint256"}],"name":"increaseAllowance","outputs":[{"internalType":"bool","name":"","type":"bool"}],"stateMutability":"nonpayable","type":"function"},{"inputs":[],"name":"name","outputs":[{"internalType":"string","name":"","type":"string"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"uint256","name":"amount","type":"uint256"}],"name":"redeem","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[],"name":"register","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"address","name":"","type":"address"}],"name":"registeredUsers","outputs":[{"internalType":"bool","name":"","type":"bool"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"symbol","outputs":[{"internalType":"string","name":"","type":"string"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"tokenInfo","outputs":[{"internalType":"string","name":"name","type":"string"},{"internalType":"string","name":"symbol","type":"string"},{"internalType":"uint8","name":"decimals","type":"uint8"},{"internalType":"uint256","name":"totalSupply","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"totalSupply","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"address","name":"to","type":"address"},{"internalType":"uint256","name":"amount","type":"uint256"}],"name":"transfer","outputs":[{"internalType":"bool","name":"","type":"bool"}],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"uint256","name":"cbAmount","type":"uint256"}],"name":"transferCbToEth","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"pure","type":"function"},{"inputs":[{"internalType":"address","name":"from","type":"address"},{"internalType":"address","name":"to","type":"address"},{"internalType":"uint256","name":"amount","type":"uint256"}],"name":"transferFrom","outputs":[{"internalType":"bool","name":"","type":"bool"}],"stateMutability":"nonpayable","type":"function"},{"stateMutability":"payable","type":"receive"}];
+        let web3 = new Web3(Web3.givenProvider || "http://localhost:8545");
+        let contract = new web3.eth.Contract(abi, contractAddress);
+        document.getElementById("register").disabled = true;
+        document.getElementById("transfer").disabled = true;
+        document.getElementById("redeem").disabled = true;
+        async function connectMetaMask() {
+    if (window.ethereum) {
+        try {
+            await window.ethereum.request({ method: 'eth_requestAccounts' });
+            console.log("MetaMask conectado!");
+            document.getElementById("register").disabled = false;
+            document.getElementById("transfer").disabled = false;
+            document.getElementById("redeem").disabled = false;
+            // Adicione este trecho de código para lidar com o evento 'disconnect'
+            window.ethereum.on('disconnect', (error) => {
+                console.error("MetaMask desconectado:", error);
+                // Execute qualquer ação adicional necessária quando o MetaMask for desconectado
+            });
+
+        } catch (error) {
+            console.error("Erro ao conectar ao MetaMask: ", error);
+        }
+    } else {
+        console.error("MetaMask não encontrado!");
+    }
+}
+document.getElementById("connectMetaMask").onclick = async () => {
+    await connectMetaMask();
+    const accounts = await web3.eth.getAccounts();
+    if (accounts && accounts[0]) {
+        document.getElementById("checkBalance").disabled = false;
+    }
+};
+
+document.getElementById("register").onclick = async () => {
+    const accounts = await web3.eth.getAccounts();
+    contract.methods.register().send({ from: accounts[0] })
+        .on("receipt", (receipt) => {
+            alert("Usuário registrado com sucesso!");
+        })
+        .on("error", (error) => {
+            alert("Erro ao registrar usuário: " + error.message);
+        });
+};
+
+document.getElementById("transfer").onclick = async () => {
+    const accounts = await web3.eth.getAccounts();
+    const amount = document.getElementById("transferAmount").value;
+    const to = document.getElementById("transferTo").value;
+    const weiAmount = web3.utils.toWei(amount);
+    contract.methods.transfer(to, weiAmount).send({ from: accounts[0] })
+        .on("receipt", (receipt) => {
+            alert("Transferência realizada com sucesso!");
+        })
+        .on("error", (error) => {
+            alert("Erro ao transferir CB$: " + error.message);
+        });
+};
+
+document.getElementById("redeem").onclick = async () => {
+    const accounts = await web3.eth.getAccounts();
+    if (!accounts || !accounts[0]) {
+        alert("Endereço da conta não encontrado. Certifique-se de que o MetaMask esteja conectado.");
+        return;
+    }
+
+    const amount = document.getElementById("redeemAmount").value;
+    const weiAmount = web3.utils.toWei(amount);
+
+    contract.methods.redeem(weiAmount).send({ from: accounts[0] })
+        .on("receipt", (receipt) => {
+            alert("Resgate realizado com sucesso!");
+        })
+        .on("error", (error) => {
+            alert("Erro ao resgatar CB$: " + error.message);
+        });
+};
+document.getElementById("checkBalance").onclick = async () => {
+    const accounts = await web3.eth.getAccounts();
+    if (!accounts || !accounts[0]) {
+        alert("Endereço da conta não encontrado. Certifique-se de que o MetaMask esteja conectado.");
+        return;
+    }
+
+    const balance = await contract.methods.balanceOf(accounts[0]).call();
+    document.getElementById("balance").innerText = "Saldo: " + web3.utils.fromWei(balance) + " CB$";
+};
+
+document.getElementById("checkWallet").onclick = async () => {
+    const walletAddress = document.getElementById("walletAddress").value;
+    if (!web3.utils.isAddress(walletAddress)) {
+        alert("Endereço de carteira inválido.");
+        return;
+    }
+
+    const isRegistered = await contract.methods.registeredUsers(walletAddress).call();
+    const walletBalance = await contract.methods.balanceOf(walletAddress).call();
+    const ethBalance = await web3.eth.getBalance(walletAddress);
+
+    let walletInfo = `Endereço: ${walletAddress}<br>`;
+    walletInfo += `Registrado: ${isRegistered ? "Sim" : "Não"}<br>`;
+    walletInfo += `Saldo CB$: ${web3.utils.fromWei(walletBalance)}<br>`;
+    walletInfo += `Saldo ETH: ${web3.utils.fromWei(ethBalance)}`;
+
+    document.getElementById("walletInfo").innerHTML = walletInfo;
+};
+
+document.getElementById("registerWallet").onclick = async () => {
+    const walletAddress = document.getElementById("walletAddress").value;
+    if (!web3.utils.isAddress(walletAddress)) {
+        alert("Endereço de carteira inválido.");
+        return;
+    }
+
+    const accounts = await web3.eth.getAccounts();
+    contract.methods.register().send({ from: walletAddress })
+        .on("receipt", (receipt) => {
+            alert("Carteira registrada com sucesso!");
+        })
+        .on("error", (error) => {
+            alert("Erro ao registrar carteira: " + error.message);
+        });
+};
+
+    </script>
+</body>
+</html>
+
