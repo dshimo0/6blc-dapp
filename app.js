@@ -42,8 +42,6 @@ document.addEventListener("DOMContentLoaded", () => {
       const walletBalance = await provider.getBalance(userAddress);
       document.getElementById("walletBalance").innerText = ethers.utils.formatUnits(walletBalance, "wei");
     }
-
-
   });
 
   async function updateCashbackBalance() {
